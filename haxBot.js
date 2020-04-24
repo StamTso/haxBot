@@ -6,6 +6,13 @@ const geo = {
 };
 const roomName = 'NoobLand -  All Noobs are welcome';
 const hostName = 'NooBot';
+
+let room = HBInit({ roomName: roomName, maxPlayers: 16, playerName : hostName, public : false, geo});
+room.setDefaultStadium('Classic');
+room.setScoreLimit(3);
+room.setTimeLimit(3);
+room.setTeamsLock();
+
 const palette = {
     red: 0xF51304,
     green: 0x00FF00,
@@ -13,11 +20,6 @@ const palette = {
 	yellow: 0xECEC09,
 	magenta: 0xF634FF
 };
-let room = HBInit({ roomName: roomName, maxPlayers: 16, playerName : hostName, public : false, geo});
-
-room.setDefaultStadium('Classic');
-room.setScoreLimit(3);
-room.setTimeLimit(3);
 
 // Helper functions
 
@@ -89,7 +91,6 @@ function unmute(player, message){ // !unmute Anddy
 
 function setAdmin(player, message){ // !admin Anddyisthebest
 	// Gives admin to the person who type this password
-
 	room.setPlayerAdmin(player.id, true);
 	return false; // The message won't be displayed
 };
@@ -367,6 +368,7 @@ let blueTeam;
 let checkOvertime;
 let kickOff = false;
 let hasFinished = false;
+let looserTeamID;
 
 room.onPlayerLeave = function(player) {
   room.sendAnnouncement(`Player ${player.name} has left ${roomName}`, null, palette.yellow, 'bold', 2);
@@ -475,10 +477,12 @@ room.onTeamVictory = function(scores){ // Sum up all scorers since the beginning
 	if (scores.red > scores.blue) {
 		updateWinLoseStats(redTeam, blueTeam);
 		blueTeam.forEach(player => room.setPlayerTeam(player.id, 0));
+		looserTeamID = 2;
 	}
 	else{ 
 		updateWinLoseStats(blueTeam, redTeam);
 		redTeam.forEach(player => room.setPlayerTeam(player.id, 0));
+		looserTeamID = 1;
     };
 
 	room.sendAnnouncement("Scored goals:", null, palette.yellow, 'small-bold', 2);
@@ -494,6 +498,8 @@ room.onPlayerAdminChange = function(changedPlayer, byPlayer){
 };
 
 room.onGameStop = function(){
+	const spectators = room.getPlayerList.filter(player => player.tema === 0);
+	spectators.length > 1 && room.setPlayerTeam(spectators[1].id, looserTeamID);
     clearInterval(checkOvertime);
 	scorers = undefined;
 	whoTouchedBall = [init, init];
