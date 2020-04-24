@@ -29,7 +29,7 @@ room.setTimeLimit(3);
 
 
 /*
-	Functions
+	Helper functions
 */
 // If there are no admins left in the room give admin to one of the remaining players.
 function updateAdmins() {
@@ -44,6 +44,19 @@ function initPlayerStats(player){
 	if (stats.get(player.name)) return;
 	stats.set(player.name, [0, 0, 0, 0, 0, 0]); // goals, assists, wins, loses, og, cs
 };
+
+// return: the name of the team who took a goal
+const teamName = team => team === 1 ? "blue" : "red";
+
+// return: whether it's an OG
+const getOwnGoalSuffix = (team, player) => team != player.team ? "(og)" : "";
+
+// return: a better display of the second when a goal is scored
+const floor = s => s < 10 ? "0" + s : s;
+
+// return: whether there's an assist
+const getAssistPlayer = playerList => playerList[0].team === playerList[1].team ? " (" + playerList[1].name + ")" : "";
+
 
 
 
@@ -327,23 +340,6 @@ function isOvertime(){
 	};
 };
 
-// return: the name of the team who took a goal
-var team_name = team => team === 1 ? "blue" : "red";
-
-// return: whether it's an OG
-var isOwnGoal = (team, player) => team != player.team ? "(og)" : "";
-
-// return: a better display of the second when a goal is scored
-var floor = s => s < 10 ? "0" + s : s;
-
-// return: whether there's an assist
-var getAssistPlayer = playerList => playerList[0].team === playerList[1].team ? " (" + playerList[1].name + ")" : "";
-
-
-
-/*
-Events
-*/
 let stats = new Map(); // map where will be set all player stats
 let mutedPlayers = []; // Array where will be added muted players
 let init = "init"; // Smth to initialize smth
@@ -389,12 +385,20 @@ const commands = {
 initPlayerStats(room.getPlayerList()[0]) // lazy lol, i'll fix it later
 initPlayerStats(init);
 
+/* 
+	Event handling
+*/
+
+let redTeam;
+let blueTeam;
+let checkOvertime;
+let kickOff = false;
+let hasFinished = false;
+
 room.onPlayerLeave = function(player) {
   room.sendAnnouncement(`Player ${player.name} has left ${roomName}`, null, palette.green, 'bold', 2);
   updateAdmins();
 };
-
-
 
 room.onPlayerJoin = function(player) {
 	updateAdmins(); // Gives admin to the first player who join the room if there's no one
@@ -404,10 +408,6 @@ room.onPlayerJoin = function(player) {
     room.sendAnnouncement(`Help for chat commands: !help, !adminhelp, !rankhelp, !gkhelp`, player.id, palette.blue, 'italic', 2);
     room.sendAnnouncement(`Player ${player.name} has joined ${roomName}`, null, palette.green, 'bold', 2);
 };
-
-let redTeam;
-let blueTeam;
-let checkOvertime;
 
 room.onGameStart = function() {
     checkOvertime = setInterval(isOvertime, 5000, hasFinished);
@@ -421,8 +421,6 @@ room.onPlayerTeamChange = function(player){
 	};
 };
 
-
-
 room.onPlayerChat = function(player, message) {
 	if (mutedPlayers.includes(player.name)) return false;
 	let spacePos = message.search(" ");
@@ -433,15 +431,9 @@ room.onPlayerChat = function(player, message) {
     };
 };
 
-
-
-
 room.onPlayerBallKick = function (player){
 	whoTouchedLast = player;
 };
-
-let kickOff = false;
-let hasFinished = false;
 
 room.onGameTick = function() {
 	if (!kickOff) { // simplest comparison to not charge usulessly the tick thing
@@ -449,14 +441,14 @@ room.onGameTick = function() {
 			kickOff = true;
 			gks = getGKS();
 			room.sendChat("GK RED:" + gks[0].name + " - GK BLUE:" + gks[1].name);
-		}
-	};
-	if (!goalScored){
-		whoTouchedLast = getLastTouchTheBall(whoTouchedLast);
-	};
-	if (whoTouchedLast !== undefined) {
-
-		if (ballCarrying.get(whoTouchedLast.name)) {
+		} 
+	}; 
+	if (!goalScored){ 
+		whoTouchedLast = getLastTouchTheBall(whoTouchedLast); 
+	}; 
+	if (whoTouchedLast !== undefined) { 
+ 
+		if (ballCarrying.get(whoTouchedLast.name)) { 
 			ballCarrying.get(whoTouchedLast.name)[0] += 1/60;
 		}
 
@@ -473,14 +465,14 @@ room.onTeamGoal = function(team){ // Write on chat who scored and when.
 	var time = room.getScores().time;
 	var m = Math.trunc(time/60); var s = Math.trunc(time % 60);
 	time = m + ":" + floor(s); // MM:SS format
-	var ownGoal = isOwnGoal(team, whoTouchedBall[0]);
+	var ownGoal = getOwnGoalSuffix(team, whoTouchedBall[0]);
 	var assist = "";
 	if (ownGoal == "") assist = getAssistPlayer(whoTouchedBall);
 
 
 	room.sendChat("Goal scored by " + whoTouchedBall[0].name + 
 	 assist + ownGoal + " at " +
-	 time + " against " + team_name(team));
+	 time + " against " + teamName(team));
 
 	 if (ownGoal != "") {
 		 stats.get(whoTouchedBall[0].name)[4] += 1;
