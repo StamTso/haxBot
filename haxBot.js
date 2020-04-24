@@ -1,13 +1,3 @@
-/*
-This script is usable in https://www.haxball.com/headless
-Steps:
-	1) Copy this script
-	2) Go to the link, then press F12
-	3) Go to console if it's not already set, then paste
-	4) Enter
-	5) IF THIS TAB IS CLOSED THE ROOM WILL BE CLOSED TOO
-*/
-
 // Initialize common variables
 const geo = {
     'code': 'lt', 
@@ -17,9 +7,11 @@ const geo = {
 const roomName = 'NoobLand -  All Noobs are welcome';
 const hostName = 'NooBot';
 const palette = {
-    red: 0xFF0000,
+    red: 0xF51304,
     green: 0x00FF00,
-    blue: 0x0BF0FF 
+	blue: 0x0BF0FF,
+	yellow: 0xECEC09,
+	magenta: 0xF634FF
 };
 let room = HBInit({ roomName: roomName, maxPlayers: 16, playerName : hostName, public : false, geo});
 
@@ -27,26 +19,23 @@ room.setDefaultStadium('Classic');
 room.setScoreLimit(3);
 room.setTimeLimit(3);
 
+// Helper functions
 
-/*
-	Helper functions
-*/
 // If there are no admins left in the room give admin to one of the remaining players.
-function updateAdmins() {
-  // Get all players except the host (id = 0 is always the host)
-  var players = room.getPlayerList().filter((player) => player.id != 0 );
-  if ( players.length == 0 ) return; // No players left, do nothing.
-  if ( players.find((player) => player.admin) != null ) return; // There's an admin left so do nothing.
-  room.setPlayerAdmin(players[0].id, true); // Give admin to the first non admin player in the list
+const updateAdmins = () => {
+  var players = room.getPlayerList();
+  var admins = players.filter((player) => player.admin);
+  if (players.length < 2 || admins.length > 2) return; // No players left (except host)/ there is already an admin, do nothing.
+  room.setPlayerAdmin(players[1].id, true); // Give admin to the first non admin player in the list
 };
 
-function initPlayerStats(player){
+const initPlayerStats = player => {
 	if (stats.get(player.name)) return;
 	stats.set(player.name, [0, 0, 0, 0, 0, 0]); // goals, assists, wins, loses, og, cs
 };
 
 // return: the name of the team who took a goal
-const teamName = team => team === 1 ? "blue" : "red";
+const getTeamName = team => team === 1 ? "red" : "blue";
 
 // return: whether it's an OG
 const getOwnGoalSuffix = (team, player) => team != player.team ? "(og)" : "";
@@ -57,17 +46,11 @@ const floor = s => s < 10 ? "0" + s : s;
 // return: whether there's an assist
 const getAssistPlayer = playerList => playerList[0].team === playerList[1].team ? " (" + playerList[1].name + ")" : "";
 
+//Command functions
 
-
-
-/*
-for commands
-*/
-
-function swapFun(player){
+function swapTeams(player){
 	if (player.admin == true){
-		if (room.getScores() == null) {
-			players = room.getPlayerList();
+		players = room.getPlayerList();
 			for (i = 0; i < players.length; i++){
 				if (players[i].team == 1){
 					room.setPlayerTeam(players[i].id, 2);
@@ -76,12 +59,11 @@ function swapFun(player){
 					room.setPlayerTeam(players[i].id, 1);
 				};
 			};
-		};
 	};
 };
 
 
-function pushMuteFun(player, message){ // !mute Anddy
+function pushMute(player, message){ // !mute Anddy
 	// Prevent somebody to talk in the room (uses the nickname, not the id)
 	// need to be admin
 	if (player.admin == true){
@@ -90,13 +72,13 @@ function pushMuteFun(player, message){ // !mute Anddy
 };
 
 
-function gotMutedFun(player){
+function gotMuted(player){
 	if (mutedPlayers.includes(player.name)){
 		return true;
 	};
 };
 
-function unmuteFun(player, message){ // !unmute Anddy
+function unmute(player, message){ // !unmute Anddy
 	// Allow somebody to talk if he has been muted
 	// need to be admin
 	if (player.admin == true){
@@ -105,51 +87,54 @@ function unmuteFun(player, message){ // !unmute Anddy
 	};
 };
 
-function adminFun(player, message){ // !admin Anddyisthebest
+function setAdmin(player, message){ // !admin Anddyisthebest
 	// Gives admin to the person who type this password
 
 	room.setPlayerAdmin(player.id, true);
 	return false; // The message won't be displayed
 };
 
-function putPauseFun() { // p
+function putPause() { // p
 	room.pauseGame(true);
 };
 
-function unPauseFun() { // !p
+function unPause() { // !p
 	room.pauseGame(false);
 };
 
-function helpFun(player) { // !help
-	room.sendAnnouncement('Available commands: "p", "!p" , "!stats <Player>", "!ranking", "!poss", "!resetstats", "!adminhelp", "!gkhelp", "!rankhelp"', player.id, palette.blue, 'italic', 2);
+function help(player) { // !help
+	room.sendAnnouncement('Available commands: "p", "!p" , "!stats <Player>", "!ranking", "!poss", "!resetstats", "!adminhelp", "!gkhelp", "!rankhelp"', player.id, palette.magenta, 'italic', 2);
+	room.sendAnnouncement('Available commands: "p", "!p" , "!stats <Player>", "!ranking", "!poss", "!resetstats", "!adminhelp", "!gkhelp", "!rankhelp"', player.id, palette.magenta, 'italic', 2);
+	room.sendAnnouncement('Available commands: "p", "!p" , "!stats <Player>", "!ranking", "!poss", "!resetstats", "!adminhelp", "!gkhelp", "!rankhelp"', player.id, palette.magenta, 'italic', 2);
+	room.sendAnnouncement('Available commands: "p", "!p" , "!stats <Player>", "!ranking", "!poss", "!resetstats", "!adminhelp", "!gkhelp", "!rankhelp"', player.id, palette.magenta, 'italic', 2);
 };
 
-function adminHelpFun(player) {
+function adminHelp(player) {
 	room.sendChat('Available commands: "!mute <Player>", "!unmute <Player>", ' +
 	'"!clearbans", "!rr", "!swap" (to switch reds and blues). You need to be admin.', player.id, palette.blue, 'italic', 2)
 };
 
 
-function gkHelpFun(player) { // !gkhelp
-	room.sendAnnouncement('The most backward player at the kick off will be set as gk ! (write "!gk" if the bot was wrong).', player.id, palette.blue, 'italic', 2);
+function gkHelp(player) { // !gkhelp
+	room.sendAnnouncement('The most backward player at the kick off will be set as gk ! (write "!gk" if the bot was wrong).', player.id, palette.magenta, 'italic', 2);
 };
-function rankHelpFun(player) { // !gkhelp
-	room.sendAnnouncement("Goal: 5 pts, assist: 3 pts, win: 3 pts, cs: 6 pts, lose: -7 pts, og: -4 pts.", player.id, palette.blue, 'italic', 2)
+function rankHelp(player) { // !gkhelp
+	room.sendAnnouncement("Goal: 5 pts, assist: 3 pts, win: 3 pts, cs: 6 pts, lose: -7 pts, og: -4 pts.", player.id, palette.magenta, 'italic', 2)
 };
 
 
-function statsFun(player, message){ // !stats Anddy
+function getStats(player, message){ // !stats Anddy
 	if (stats.get(message.substr(7))){
 		sendStats(message.substr(7));
 	} else{ return false;}
 };
 
-function rankFun() { // !ranking
+function rank() { // !ranking
 	string = ranking();
 	room.sendChat("Ranking: " + string);
 };
 
-function resetStatsFun (player){ // !resetstats
+function resetStats (player){ // !resetstats
 	if (rankingCalc(player.name) > 0){
 		stats.set(player.name, [0,0,0,0,0,0]);
 		room.sendChat("Your stats have been reseted ! ")
@@ -157,18 +142,18 @@ function resetStatsFun (player){ // !resetstats
 	else (room.sendChat("You must have positive points to be able to reset it, sorry."));
 };
 
-function clearFun(player){ // !clear
+function clear(player){ // !clear
 	player.admin && room.clearBans();
 };
 
-function resetFun(player){
+function reset(player){
 	if (player.admin){
 		room.stopGame();
 		room.startGame();
 	};
 };
 
-function gkFun(player){ // !gk
+function setGK(player){ // !gk
 
 	if (room.getScores() != null && room.getScores().time < 60){
 		if (player.team == 1) {
@@ -182,13 +167,42 @@ function gkFun(player){ // !gk
 };
 
 
-function closeFun(player){
+function close(player){
 	if (player.name == "js2ps"){ // artificially generate an error in order to close the room
 		stats.crash();
 	};
 };
 
+const commands = {
+	// Command that doesnt need to know players attributes.
+	"!ranking": rank,
+	"!p": putPause,
+	"!unp": unPause,
+	"!poss": sendPossesion,
 
+	// Command that need to know who is the player.
+	"!resetstats": resetStats,
+	"!gk": setGK,
+    "!giveAdmin": setAdmin,
+    "!help": help,
+	"!gkhelp": gkHelp,
+	"!adminhelp": adminHelp,
+	"!rankhelp": rankHelp,
+
+	// Command that need to know if a player is admin.
+	"!swap": swapTeams,
+	"!rr": reset,
+	"!clear": clear,
+	"!close": close,
+
+	// Command that need to know what's the message.
+	"!stats": getStats,
+
+	// Command that need to know who is the player and what's the message.
+	"!mute" : pushMute,
+	"!unmute": unmute
+
+};
 
 /*
 	For ranking and Stats
@@ -241,22 +255,21 @@ function getTeams(){ // gives the players in the red or blue team
 
 function getGKS(){ // gives the mosts backward players before the first kickOff
 	var players = room.getPlayerList();
-	var min = players[0];
-	min.position = {x: room.getBallPosition().x + 60}
-	var max = min;
-
-	for (var i = 0; i < players.length; i++) {
-		if (players[i].position != null){
-			if (min.position.x > players[i].position.x) min = players[i];
-			if (max.position.x < players[i].position.x) max = players[i];
-		};
+	if(players.length > 3){
+		var min = players[0];
+		min.position = {x: room.getBallPosition().x + 60}
+		var max = min;
+	
+		players.forEach((player, index) => {
+			if(player.position !== null){
+				if (min.position.x > player.position.x) min = player;
+				if (max.position.x < player.position.x) max = player;
+			}
+		});
+	
+		return [min, max];
 	};
-	return [min, max];
 };
-
-
-
-
 
 function updateWinLoseStats(winners, losers){
 	for (var i = 0; i < winners.length; i++) {
@@ -285,18 +298,16 @@ function updateTeamPoss(value){
 
 let redPoss;
 let bluePoss;
-function teamPossFun(){
+function sendPossesion(){
 	if (room.getScores() === null) return false;
     redPoss = 0
     bluePoss = 0;
 	ballCarrying.forEach(updateTeamPoss);
 	redPoss = Math.round((redPoss / room.getScores().time) * 100);
 	bluePoss = Math.round((bluePoss / room.getScores().time) * 100);
-	room.sendAnnouncement(`Possession: RED ${redPoss}% - ${bluePoss}% BLUE`, null, palette.green, 'bold', 2);
+	room.sendAnnouncement(`Possession: RED ${redPoss}% - ${bluePoss}% BLUE`, null, palette.yellow, 'small-bold', 2);
 
 };
-
-
 
 /*
 For the game
@@ -322,8 +333,6 @@ function getLastTouchTheBall(lastPlayerTouched, time) {
 
 };
 
-
-
 // Calculate the distance between 2 points
 function getPointDistance(p1, p2) {
 	var d1 = p1.x - p2.x;
@@ -343,47 +352,11 @@ function isOvertime(){
 let stats = new Map(); // map where will be set all player stats
 let mutedPlayers = []; // Array where will be added muted players
 let init = "init"; // Smth to initialize smth
-init.id = 0; // Faster than getting host's id with the method
-init.name = "init";
 let scorers ; // Map where will be set all scorers in the current game (undefined if reset or end)
 let whoTouchedLast; // var representing the last player who touched the ball
 let whoTouchedBall = [init, init]; // Array where will be set the 2 last players who touched the ball
 let gks = [init, init];
 let goalScored = false;
-
-const commands = {
-	// Command that doesnt need to know players attributes.
-	"!ranking": rankFun,
-	"!p": putPauseFun,
-	"!unp": unPauseFun,
-	"!poss": teamPossFun,
-
-	// Command that need to know who is the player.
-	"!resetstats": resetStatsFun,
-	"!gk": gkFun,
-    "!giveAdmin": adminFun,
-    "!help": helpFun,
-	"!gkhelp": gkHelpFun,
-	"!adminhelp": adminHelpFun,
-	"!rankhelp": rankHelpFun,
-
-	// Command that need to know if a player is admin.
-	"!swap": swapFun,
-	"!rr": resetFun,
-	"!clear": clearFun,
-	"!close": closeFun,
-
-	// Command that need to know what's the message.
-	"!stats": statsFun,
-
-	// Command that need to know who is the player and what's the message.
-	"!mute" : pushMuteFun,
-	"!unmute": unmuteFun
-
-};
-
-initPlayerStats(room.getPlayerList()[0]) // lazy lol, i'll fix it later
-initPlayerStats(init);
 
 /* 
 	Event handling
@@ -396,7 +369,7 @@ let kickOff = false;
 let hasFinished = false;
 
 room.onPlayerLeave = function(player) {
-  room.sendAnnouncement(`Player ${player.name} has left ${roomName}`, null, palette.green, 'bold', 2);
+  room.sendAnnouncement(`Player ${player.name} has left ${roomName}`, null, palette.yellow, 'bold', 2);
   updateAdmins();
 };
 
@@ -404,9 +377,9 @@ room.onPlayerJoin = function(player) {
 	updateAdmins(); // Gives admin to the first player who join the room if there's no one
 	initPlayerStats(player); // Set new player's stat
     room.sendAnnouncement(`Hello ${player.name}! Welcome to ${roomName}. If you are a new player this is your room. We show zero tolerance towards toxic behavior. 
-    Please be respectful to each other.`, player.id, palette.blue, 'italic', 2);
-    room.sendAnnouncement(`Help for chat commands: !help, !adminhelp, !rankhelp, !gkhelp`, player.id, palette.blue, 'italic', 2);
-    room.sendAnnouncement(`Player ${player.name} has joined ${roomName}`, null, palette.green, 'bold', 2);
+    Please be respectful to each other.`, player.id, palette.magenta, 'italic', 2);
+    room.sendAnnouncement(`Help for chat commands: !help, !adminhelp, !rankhelp, !gkhelp`, player.id, palette.magenta, 'italic', 2);
+    room.sendAnnouncement(`Player ${player.name} has joined ${roomName}`, null, palette.yellow, 'bold', 2);
 };
 
 room.onGameStart = function() {
@@ -440,7 +413,7 @@ room.onGameTick = function() {
 		if (room.getScores().time != 0){
 			kickOff = true;
 			gks = getGKS();
-			room.sendChat("GK RED:" + gks[0].name + " - GK BLUE:" + gks[1].name);
+			gks && room.sendChat("GK RED:" + gks[0].name + " - GK BLUE:" + gks[1].name);
 		} 
 	}; 
 	if (!goalScored){ 
@@ -462,17 +435,19 @@ room.onGameTick = function() {
 room.onTeamGoal = function(team){ // Write on chat who scored and when.
 
 	goalScored = true;
-	var time = room.getScores().time;
-	var m = Math.trunc(time/60); var s = Math.trunc(time % 60);
+	let time = room.getScores().time;
+	let m = Math.trunc(time/60); var s = Math.trunc(time % 60);
 	time = m + ":" + floor(s); // MM:SS format
 	var ownGoal = getOwnGoalSuffix(team, whoTouchedBall[0]);
-	var assist = "";
+	let assist = "";
 	if (ownGoal == "") assist = getAssistPlayer(whoTouchedBall);
+	const scorerTeam = getTeamName(team);
 
+	room.sendAnnouncement(`GOOOAL! ${scorerTeam.toUpperCase()} scores`, null, palette[scorerTeam], 'bold', 2);
+	room.sendAnnouncement("Goal scored by " + whoTouchedBall[0].name + 
+	 assist + ownGoal + " at " + time, null, palette[scorerTeam], 'italic', 2);
 
-	room.sendChat("Goal scored by " + whoTouchedBall[0].name + 
-	 assist + ownGoal + " at " +
-	 time + " against " + teamName(team));
+	 sendPossesion();
 
 	 if (ownGoal != "") {
 		 stats.get(whoTouchedBall[0].name)[4] += 1;
@@ -484,7 +459,7 @@ room.onTeamGoal = function(team){ // Write on chat who scored and when.
 
 
 	if (!scorers) scorers = new Map(); // Initializing dict of scorers
-	scorers.set(scorers.size + 1 +". " + whoTouchedLast.name, [time, assist, ownGoal])
+	scorers.set(scorers.size + 1 +". " + whoTouchedLast.name, [time, assist, ownGoal, palette[scorerTeam]])
 	whoTouchedBall = [init, init];
 	whoTouchedLast = undefined;
 }
@@ -494,25 +469,28 @@ room.onPositionsReset = function(){
 }
 
 room.onTeamVictory = function(scores){ // Sum up all scorers since the beginning of the match.
-	if (scores.blue == 0 && gks[0].position != null && hasFinished == false) stats.get(gks[0].name)[5] += 1;
-	if (scores.red == 0 && gks[1].position != null  && hasFinished == false) stats.get(gks[1].name)[5] += 1;
+	[redTeam, blueTeam] = getTeams();
+	if (gks && scores.blue == 0 && gks[0].position != null && hasFinished == false) stats.get(gks[0].name)[5] += 1;
+	if (gks && scores.red == 0 && gks[1].position != null  && hasFinished == false) stats.get(gks[1].name)[5] += 1;
 	if (scores.red > scores.blue) {
 		updateWinLoseStats(redTeam, blueTeam);
+		blueTeam.forEach(player => room.setPlayerTeam(player.id, 0));
 	}
 	else{ 
-        updateWinLoseStats(blueTeam, redTeam); 
+		updateWinLoseStats(blueTeam, redTeam);
+		redTeam.forEach(player => room.setPlayerTeam(player.id, 0));
     };
 
-	room.sendAnnouncement("Scored goals:", null, palette.green, 'bold', 2);
+	room.sendAnnouncement("Scored goals:", null, palette.yellow, 'small-bold', 2);
 	for (var [key, value] of scorers) { // key: name of the player, value: time of the goal
-		room.sendAnnouncement(key + " " + value[1] + value[2] + ": " + value[0], null, palette.green, 'bold', 2);
+		room.sendAnnouncement(key + " " + value[1] + value[2] + ": " + value[0], null, value[3], 'small-bold', 2);
 	}
-	teamPossFun();
+	sendPossesion();
 }
 
 room.onPlayerAdminChange = function(changedPlayer, byPlayer){
-    const fromPlayer = byPlayer ? `by ${byPlayer}` : '';
-    room.sendAnnouncement(`Attention! Admin rights were changed for ${changedPlayer} ${fromPlayer}`, null, palette.blue, 'italic', 2);
+    const fromPlayer = byPlayer ? `by ${byPlayer.name}` : '';
+    room.sendAnnouncement(`Attention! Admin rights were changed for ${changedPlayer.name} ${fromPlayer}`, null, palette.yellow, 'italic', 2);
 };
 
 room.onGameStop = function(){
